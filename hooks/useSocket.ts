@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { Message } from '@/lib/db/messages';
 import { Note } from '@/lib/db/notes';
@@ -13,7 +13,7 @@ interface SessionData {
 }
 
 interface Participant {
-  id: string;
+  id: string | undefined;
   name: string;
 }
 
@@ -43,7 +43,6 @@ export function useSocket(sessionId: string, displayName: string) {
       setNotes(data.notes);
       setLinks(data.links);
       setFiles(data.files);
-      setParticipants([]);
     });
 
     socketInstance.on('new-message', (message: Message) => {

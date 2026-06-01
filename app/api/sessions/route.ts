@@ -19,5 +19,5 @@ export async function GET(request: NextRequest) {
   }
 
   const session = getSession(sessionId);
-  return NextResponse.json({ valid: true, ...session });
+  return NextResponse.json({ valid: true, id: session?.id, created_at: session?.created_at, expires_at: session?.expires_at });
 }

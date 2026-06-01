@@ -3,6 +3,12 @@ import { nanoid } from 'nanoid';
 
 const SESSION_DURATION_HOURS = 24;
 
+export interface Session {
+  id: string;
+  created_at: number;
+  expires_at: number;
+}
+
 export function createSession() {
   const id = nanoid(8);
   const now = Date.now();
@@ -17,12 +23,12 @@ export function createSession() {
   return { id, expiresAt };
 }
 
-export function getSession(id: string) {
+export function getSession(id: string): Session | undefined {
   const stmt = db.prepare(`
     SELECT id, created_at, expires_at FROM sessions WHERE id = ?
   `);
   
-  return stmt.get(id);
+  return stmt.get(id) as Session | undefined;
 }
 
 export function isSessionValid(id: string): boolean {

@@ -1,6 +1,10 @@
-# Relay
+# Relay [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 A lightweight, temporary collaboration session tool for collecting files, links, notes, and chat from multiple people in one place.
+
+[![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-blue?logo=typescript)](https://www.typescriptlang.org/)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-realtime-black?logo=socket.io)](https://socket.io/)
 
 ## Core Concept
 
@@ -45,14 +49,13 @@ Relay is designed to solve the temporary coordination problem — when a group n
 
 ## Database Schema
 
-- **sessions** - Session metadata with expiration
-- **messages** - Chat messages
-- **notes** - Shared notes with pinning support
-- **links** - Submitted URLs
-- **files** - Uploaded file metadata
-- **activity_events** - (Planned) Session activity tracking
-- **pins** - (Planned) Pinned item references
-- **participants** - (Planned) Participant tracking
+- **sessions** - `id`, `created_at`, `expires_at`
+- **messages** - `id`, `session_id`, `content`, `sender`, `created_at`
+- **notes** - `id`, `session_id`, `content`, `created_by`, `created_at`, `pinned`
+- **links** - `id`, `session_id`, `url`, `title`, `created_by`, `created_at`
+- **files** - `id`, `session_id`, `filename`, `url`, `size`, `uploaded_by`, `created_at`
+
+All tables have indexes on `session_id` for fast queries. Sessions expire automatically.
 
 ## Session Lifecycle
 
@@ -84,16 +87,25 @@ pnpm install
 ### Development
 
 ```bash
+# Using tsx (recommended for dev)
+tsx server.js
+
+# Or run directly with node (after build)
 node server.js
 ```
 
-Or alternatively:
-
-```bash
-npx tsx server.js
-```
-
 The application will be available at `http://localhost:3000`
+
+### Supabase Migration (Vercel-Compatible)
+To deploy on Vercel, migrate to Supabase for:
+- Database (PostgreSQL)
+- Storage (file uploads)
+- Realtime (replaces Socket.IO)
+- Optional Auth
+
+See `docs/supabase-migration.md` for details (coming soon).
+
+> **Note**: The app uses `server.js` with Socket.IO for real-time functionality. Use `tsx` if running TypeScript DB modules directly.
 
 ### Build
 
@@ -112,7 +124,11 @@ pnpm start
     /files          - File serving
   /session
     /[id]           - Session page with tabs for chat, files, links, notes, activity
-/components         - Shared UI components
+    chat-panel.tsx    - Real-time chat component
+    files-panel.tsx   - File upload/display component
+    links-panel.tsx   - Link submission component
+    notes-panel.tsx   - Shared notes component
+    activity-feed.tsx - Activity timeline component
 /hooks
   useSocket.ts      - Socket.IO client hook for real-time updates
 /lib
@@ -125,17 +141,45 @@ pnpm start
     files.ts        - File operations
 /public              - Static assets
 /relay.db            - SQLite database file
-/uploads             - Uploaded files storage
+/uploads             - Uploaded files storage (created automatically)
 server.js            - Next.js + Socket.IO server entry point
 ```
 
 ## API Endpoints
 
-### POST /api/sessions
-Create a new session. Returns `{ id, expiresAt }`.
+### Sessions
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/sessions` | Create a new session. Returns `{ id, expiresAt }`. |
+| `GET` | `/api/sessions?id={sessionId}` | Validate session. Returns `{ valid, id, created_at, expires_at }`. |
 
-### GET /api/sessions?id={sessionId}
-Validate a session. Returns `{ valid, id, created_at, expires_at }`.
+### Files
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/upload?sessionId={id}` | Upload a file to a session |
+| `GET` | `/api/files/[...path]/route` | Serve uploaded files |
+
+### Socket.IO Events
+| Event | Payload | Description |
+|-------|---------|-------------|
+| `join-session` | `{ sessionId, displayName }` | Join a session and receive initial data |
+| `send-message` | `{ sessionId, content, sender }` | Send a chat message |
+| `add-note` | `{ sessionId, content, createdBy }` | Add a shared note |
+| `add-link` | `{ sessionId, url, title, createdBy }` | Submit a URL |
+| `file-uploaded` | `{ sessionId, file }` | Notify of file upload |
+| `pin-note` | `{ sessionId, id, pinned }` | Pin/unpin a note |
+| `close-session` | `{ sessionId }` | Close/end a session |
+
+## Demo
+
+![Relay Demo](https://via.placeholder.com/800x400/f9fafb/6b7280?text=Relay+Session+Demo)
+
+1. Click "Start a Session" on the home page
+2. Share the session URL with participants
+3. Each participant enters their name and joins
+4. Use the tabs to chat, share files, links, and notes
+5. Pin important notes for visibility
+6. Session expires automatically after 24 hours
 
 ## Design Principles
 
@@ -155,6 +199,79 @@ Validate a session. Returns `{ valid, id, created_at, expires_at }`.
 - [ ] Session archiving
 - [ ] Optional host authentication (Supabase Auth)
 - [ ] Supabase integration for production deployment
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repo
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## Author
+
+**Muhammad Rafiq** - [GitHub](https://github.com/mohabbis)
+
+## Deployment
+
+### ⚠️ Vercel Limitation
+This app uses Socket.IO for real-time chat/activity which requires persistent WebSocket connections. **Vercel's serverless platform does not support persistent connections**, so real-time features will not work on Vercel.
+
+### Recommended Platforms
+For full functionality, deploy to platforms that support WebSockets:
+
+| Platform | WebSocket Support | Notes |
+|----------|-------------------|-------|
+| **Railway** | ✅ | Easy deploy, good for MVP |
+| **Render** | ✅ | Full WebSocket support |
+| **Fly.io** | ✅ | Recommended for production |
+| **DigitalOcean App Platform** | ✅ | Supports WebSockets |
+
+### Railway Deployment
+```bash
+# Install Railway CLI
+npm install -g railway
+
+# Deploy
+railway init
+railway deploy
+```
+
+### Render Deployment
+1. Create `render.yaml`:
+```yaml
+services:
+  - type: web
+    name: relay
+    env: node
+    buildCommand: npm run build
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+```
+
+### Docker Deployment
+```dockerfile
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+FROM node:20-alpine AS runner
+WORKDIR /app
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/server.js ./server.js
+COPY --from=builder /app/package*.json ./
+RUN npm install --omit dev
+EXPOSE 3000
+CMD ["node", "server.js"]
+```
 
 ## License
 

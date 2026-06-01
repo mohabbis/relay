@@ -3,8 +3,9 @@ import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { isSessionValid } from '@/lib/db/sessions';
 
-export async function GET(request: NextRequest, { params }: { params: { path: string[] } }) {
-  const [sessionId, filename] = params.path;
+export async function GET(request: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
+  const resolvedParams = await params;
+  const [sessionId, filename] = resolvedParams.path;
 
   if (!sessionId || !filename) {
     return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
