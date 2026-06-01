@@ -6,6 +6,7 @@ export interface Note {
   content: string;
   created_by: string;
   created_at: number;
+  pinned: number;
 }
 
 export function addNote(sessionId: string, content: string, createdBy: string) {
@@ -33,4 +34,9 @@ export function getNotes(sessionId: string): Note[] {
 export function deleteNote(id: number, sessionId: string) {
   const stmt = db.prepare(`DELETE FROM notes WHERE id = ? AND session_id = ?`);
   stmt.run(id, sessionId);
+}
+
+export function pinNote(id: number, sessionId: string, pinned: boolean) {
+  const stmt = db.prepare(`UPDATE notes SET pinned = ? WHERE id = ? AND session_id = ?`);
+  stmt.run(pinned ? 1 : 0, id, sessionId);
 }

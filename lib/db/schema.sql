@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS notes (
   content TEXT NOT NULL,
   created_by TEXT NOT NULL,
   created_at INTEGER NOT NULL,
+  pinned INTEGER DEFAULT 0,
   FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
 );
 

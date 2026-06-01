@@ -36,3 +36,21 @@ export function cleanupExpiredSessions() {
   const stmt = db.prepare(`DELETE FROM sessions WHERE expires_at < ?`);
   stmt.run(Date.now());
 }
+
+export function deleteSession(id: string) {
+  const stmt = db.prepare(`DELETE FROM sessions WHERE id = ?`);
+  stmt.run(id);
+  
+  // Also delete related data
+  const deleteNotes = db.prepare(`DELETE FROM notes WHERE session_id = ?`);
+  deleteNotes.run(id);
+  
+  const deleteMessages = db.prepare(`DELETE FROM messages WHERE session_id = ?`);
+  deleteMessages.run(id);
+  
+  const deleteLinks = db.prepare(`DELETE FROM links WHERE session_id = ?`);
+  deleteLinks.run(id);
+  
+  const deleteFiles = db.prepare(`DELETE FROM files WHERE session_id = ?`);
+  deleteFiles.run(id);
+}

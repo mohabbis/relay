@@ -1,12 +1,16 @@
-import Database from 'better-sqlite3';
-import { join } from 'path';
-
-const dbPath = join(process.cwd(), 'relay.db');
-export const db = new Database(dbPath);
-
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.db = void 0;
+const better_sqlite3_1 = __importDefault(require("better-sqlite3"));
+const path_1 = require("path");
+const dbPath = (0, path_1.join)(process.cwd(), 'relay.db');
+exports.db = new better_sqlite3_1.default(dbPath);
 // Initialize database
 function initDatabase() {
-  const schema = `
+    const schema = `
     CREATE TABLE IF NOT EXISTS sessions (
       id TEXT PRIMARY KEY,
       created_at INTEGER NOT NULL,
@@ -28,7 +32,6 @@ function initDatabase() {
       content TEXT NOT NULL,
       created_by TEXT NOT NULL,
       created_at INTEGER NOT NULL,
-      pinned INTEGER DEFAULT 0,
       FOREIGN KEY (session_id) REFERENCES sessions(id) ON DELETE CASCADE
     );
 
@@ -59,8 +62,6 @@ function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_links_session ON links(session_id);
     CREATE INDEX IF NOT EXISTS idx_files_session ON files(session_id);
   `;
-
-  db.exec(schema);
+    exports.db.exec(schema);
 }
-
 initDatabase();
