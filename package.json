@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "tsx server.ts",
+    "dev": "node server.js",
     "build": "next build",
     "start": "node server.js",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:vercel": "node scripts/build-vercel-redirect.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^12.10.0",
