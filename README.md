@@ -159,3 +159,36 @@ Validate a session. Returns `{ valid, id, created_at, expires_at }`.
 ## License
 
 MIT
+
+## Deployment Notes
+
+### Railway (primary app host)
+
+Relay should run as a long-lived Node process on Railway because the app uses a custom Next.js server, Socket.IO WebSockets, SQLite, and local upload storage. Railway should use the normal npm lifecycle:
+
+```bash
+npm ci
+npm run build
+npm start
+```
+
+`npm start` runs `node server.js`, which starts the custom Next.js + Socket.IO server and binds to Railway's `PORT` environment variable.
+
+### Vercel (domain handoff)
+
+Vercel serverless functions are not the primary runtime for this app because the real-time Socket.IO server and local SQLite/upload filesystem need a persistent Node process. To keep a Vercel-linked domain usable, this repository includes a Vercel static handoff build that redirects visitors to the Railway app instead of trying to run the full Relay server on Vercel.
+
+In Vercel, set one of these environment variables to the Railway public URL, then redeploy:
+
+- `RELAY_PRIMARY_URL` (recommended)
+- `NEXT_PUBLIC_RELAY_PRIMARY_URL`
+- `RAILWAY_PUBLIC_URL`
+- `RAILWAY_PUBLIC_DOMAIN`
+
+Example value:
+
+```txt
+https://your-relay-service.up.railway.app
+```
+
+The Vercel build command is `npm run build:vercel`, which writes a static page to `vercel-static/`. Any path on the Vercel domain is routed to that page, and the page preserves the original path/query/hash when redirecting to Railway.
